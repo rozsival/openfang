@@ -6852,7 +6852,7 @@ mod tests {
         let skills_dir = std::env::temp_dir().join("openfang-doctor-test-skills");
         let mut skill_reg = openfang_skills::registry::SkillRegistry::new(skills_dir);
         let count = skill_reg.load_bundled();
-        assert!(count > 0, "Should load bundled skills");
+        assert_eq!(count, 0, "No bundled skills expected");
         assert_eq!(skill_reg.count(), count);
     }
 

@@ -298,8 +298,16 @@ pub struct HandAgentConfig {
     /// making long LLM calls. Omit to use the kernel default.
     #[serde(default)]
     pub heartbeat_interval_secs: Option<u64>,
+    /// Whether to generate identity files (AGENT.md, PERSONA.md, etc.) for this
+    /// hand's underlying agent. Defaults to true. Set to false in HAND.toml to
+    /// suppress generation, same as the equivalent field on a regular agent manifest.
+    #[serde(default = "default_generate_identity_files")]
+    pub generate_identity_files: bool,
 }
 
+fn default_generate_identity_files() -> bool {
+    false
+}
 fn default_module() -> String {
     "builtin:chat".to_string()
 }

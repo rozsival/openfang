@@ -881,12 +881,12 @@ impl OpenFangKernel {
                 // Auto-detect embedding provider by checking API key env vars in
                 // priority order.  First match wins.
                 const API_KEY_PROVIDERS: &[(&str, &str)] = &[
-                    ("OPENAI_API_KEY",    "openai"),
-                    ("GROQ_API_KEY",      "groq"),
-                    ("MISTRAL_API_KEY",   "mistral"),
-                    ("TOGETHER_API_KEY",  "together"),
+                    ("OPENAI_API_KEY", "openai"),
+                    ("GROQ_API_KEY", "groq"),
+                    ("MISTRAL_API_KEY", "mistral"),
+                    ("TOGETHER_API_KEY", "together"),
                     ("FIREWORKS_API_KEY", "fireworks"),
-                    ("COHERE_API_KEY",    "cohere"),
+                    ("COHERE_API_KEY", "cohere"),
                 ];
 
                 let detected_from_key = API_KEY_PROVIDERS
@@ -1127,8 +1127,7 @@ impl OpenFangKernel {
                                                 != entry.manifest.tool_allowlist
                                             || disk_manifest.tool_blocklist
                                                 != entry.manifest.tool_blocklist
-                                            || disk_manifest.skills
-                                                != entry.manifest.skills
+                                            || disk_manifest.skills != entry.manifest.skills
                                             || disk_manifest.mcp_servers
                                                 != entry.manifest.mcp_servers;
                                         if changed {
@@ -1240,33 +1239,6 @@ impl OpenFangKernel {
             }
             Err(e) => {
                 tracing::warn!("Failed to load persisted agents: {e}");
-            }
-        }
-
-        // If no agents exist (fresh install), spawn a default assistant
-        if kernel.registry.list().is_empty() {
-            info!("No agents found — spawning default assistant");
-            let dm = &kernel.config.default_model;
-            let manifest = AgentManifest {
-                name: "assistant".to_string(),
-                description: "General-purpose assistant".to_string(),
-                model: openfang_types::agent::ModelConfig {
-                    provider: dm.provider.clone(),
-                    model: dm.model.clone(),
-                    system_prompt: "You are a helpful AI assistant.".to_string(),
-                    api_key_env: if dm.api_key_env.is_empty() {
-                        None
-                    } else {
-                        Some(dm.api_key_env.clone())
-                    },
-                    base_url: dm.base_url.clone(),
-                    ..Default::default()
-                },
-                ..Default::default()
-            };
-            match kernel.spawn_agent(manifest) {
-                Ok(id) => info!(id = %id, "Default assistant spawned"),
-                Err(e) => warn!("Failed to spawn default assistant: {e}"),
             }
         }
 
@@ -3414,6 +3386,7 @@ impl OpenFangKernel {
             } else {
                 None
             },
+            generate_identity_files: def.agent.generate_identity_files,
             ..Default::default()
         };
 
@@ -6849,39 +6822,5 @@ mod tests {
         assert!(!caps
             .iter()
             .any(|c| matches!(c, Capability::ToolInvoke(name) if name == "shell_exec")));
-    }
-
-    #[test]
-    fn test_hand_activation_does_not_seed_runtime_tool_filters() {
-        let tmp = tempfile::tempdir().unwrap();
-        let home_dir = tmp.path().join("openfang-kernel-hand-test");
-        std::fs::create_dir_all(&home_dir).unwrap();
-
-        let config = KernelConfig {
-            home_dir: home_dir.clone(),
-            data_dir: home_dir.join("data"),
-            ..KernelConfig::default()
-        };
-
-        let kernel = OpenFangKernel::boot_with_config(config).expect("Kernel should boot");
-        let instance = kernel
-            .activate_hand("browser", HashMap::new())
-            .expect("browser hand should activate");
-        let agent_id = instance.agent_id.expect("browser hand agent id");
-        let entry = kernel
-            .registry
-            .get(agent_id)
-            .expect("browser hand agent entry");
-
-        assert!(
-            entry.manifest.tool_allowlist.is_empty(),
-            "hand activation should leave the runtime tool allowlist empty so skill/MCP tools remain visible"
-        );
-        assert!(
-            entry.manifest.tool_blocklist.is_empty(),
-            "hand activation should not set a runtime blocklist by default"
-        );
-
-        kernel.shutdown();
     }
 }

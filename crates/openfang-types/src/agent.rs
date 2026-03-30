@@ -479,7 +479,7 @@ pub struct AgentManifest {
     #[serde(default)]
     pub workspace: Option<PathBuf>,
     /// Whether to generate workspace identity files (SOUL.md, USER.md, etc.) on creation.
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub generate_identity_files: bool,
     /// Per-agent exec policy override. If None, uses global exec_policy.
     /// Accepts string shorthand ("allow", "deny", "full", "allowlist") or full table.
@@ -491,10 +491,6 @@ pub struct AgentManifest {
     /// Tool blocklist — these tools are excluded (applied after allowlist).
     #[serde(default, deserialize_with = "crate::serde_compat::vec_lenient")]
     pub tool_blocklist: Vec<String>,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 impl Default for AgentManifest {
@@ -521,7 +517,7 @@ impl Default for AgentManifest {
             autonomous: None,
             pinned_model: None,
             workspace: None,
-            generate_identity_files: true,
+            generate_identity_files: false,
             exec_policy: None,
             tool_allowlist: Vec::new(),
             tool_blocklist: Vec::new(),
@@ -1134,9 +1130,9 @@ mod tests {
     // ----- generate_identity_files field tests -----
 
     #[test]
-    fn test_manifest_generate_identity_files_default_true() {
+    fn test_manifest_generate_identity_files_default_false() {
         let manifest = AgentManifest::default();
-        assert!(manifest.generate_identity_files);
+        assert!(!manifest.generate_identity_files);
     }
 
     #[test]
@@ -1150,7 +1146,7 @@ mod tests {
     fn test_manifest_generate_identity_files_defaults_on_missing() {
         let json = r#"{"name":"test"}"#;
         let manifest: AgentManifest = serde_json::from_str(json).unwrap();
-        assert!(manifest.generate_identity_files);
+        assert!(!manifest.generate_identity_files);
     }
 
     // ----- ModelConfig alias tests -----

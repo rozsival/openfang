@@ -224,10 +224,10 @@ async fn test_status_endpoint() {
     assert_eq!(resp.status(), 200);
     let body: serde_json::Value = resp.json().await.unwrap();
     assert_eq!(body["status"], "running");
-    assert_eq!(body["agent_count"], 1); // default assistant auto-spawned
+    assert_eq!(body["agent_count"], 0); // no agents by default
     assert!(body["uptime_seconds"].is_number());
     assert_eq!(body["default_provider"], "ollama");
-    assert_eq!(body["agents"].as_array().unwrap().len(), 1);
+    assert_eq!(body["agents"].as_array().unwrap().len(), 0);
 }
 
 #[tokio::test]
@@ -249,7 +249,7 @@ async fn test_spawn_list_kill_agent() {
     let agent_id = body["agent_id"].as_str().unwrap().to_string();
     assert!(!agent_id.is_empty());
 
-    // --- List (2 agents: default assistant + test-agent) ---
+    // --- List (1 agent: test-agent) ---
     let resp = client
         .get(format!("{}/api/agents", server.base_url))
         .send()
@@ -257,7 +257,7 @@ async fn test_spawn_list_kill_agent() {
         .unwrap();
     assert_eq!(resp.status(), 200);
     let agents: Vec<serde_json::Value> = resp.json().await.unwrap();
-    assert_eq!(agents.len(), 2);
+    assert_eq!(agents.len(), 1);
     let test_agent = agents.iter().find(|a| a["name"] == "test-agent").unwrap();
     assert_eq!(test_agent["id"], agent_id);
     assert_eq!(test_agent["model_provider"], "ollama");
@@ -272,7 +272,7 @@ async fn test_spawn_list_kill_agent() {
     let body: serde_json::Value = resp.json().await.unwrap();
     assert_eq!(body["status"], "killed");
 
-    // --- List (only default assistant remains) ---
+    // --- List (empty after kill) ---
     let resp = client
         .get(format!("{}/api/agents", server.base_url))
         .send()
@@ -280,8 +280,7 @@ async fn test_spawn_list_kill_agent() {
         .unwrap();
     assert_eq!(resp.status(), 200);
     let agents: Vec<serde_json::Value> = resp.json().await.unwrap();
-    assert_eq!(agents.len(), 1);
-    assert_eq!(agents[0]["name"], "assistant");
+    assert_eq!(agents.len(), 0);
 }
 
 #[tokio::test]
@@ -620,14 +619,14 @@ memory_write = ["self.*"]
         ids.push(body["agent_id"].as_str().unwrap().to_string());
     }
 
-    // List should show 4 (3 spawned + default assistant)
+    // List should show 3 (3 spawned)
     let resp = client
         .get(format!("{}/api/agents", server.base_url))
         .send()
         .await
         .unwrap();
     let agents: Vec<serde_json::Value> = resp.json().await.unwrap();
-    assert_eq!(agents.len(), 4);
+    assert_eq!(agents.len(), 3);
 
     // Status should agree
     let resp = client
@@ -636,7 +635,7 @@ memory_write = ["self.*"]
         .await
         .unwrap();
     let status: serde_json::Value = resp.json().await.unwrap();
-    assert_eq!(status["agent_count"], 4);
+    assert_eq!(status["agent_count"], 3);
 
     // Kill one
     let resp = client
@@ -646,14 +645,14 @@ memory_write = ["self.*"]
         .unwrap();
     assert_eq!(resp.status(), 200);
 
-    // List should show 3 (2 spawned + default assistant)
+    // List should show 2 (2 spawned)
     let resp = client
         .get(format!("{}/api/agents", server.base_url))
         .send()
         .await
         .unwrap();
     let agents: Vec<serde_json::Value> = resp.json().await.unwrap();
-    assert_eq!(agents.len(), 3);
+    assert_eq!(agents.len(), 2);
 
     // Kill the rest
     for id in [&ids[0], &ids[2]] {
@@ -664,14 +663,14 @@ memory_write = ["self.*"]
             .unwrap();
     }
 
-    // List should have only default assistant
+    // List should be empty
     let resp = client
         .get(format!("{}/api/agents", server.base_url))
         .send()
         .await
         .unwrap();
     let agents: Vec<serde_json::Value> = resp.json().await.unwrap();
-    assert_eq!(agents.len(), 1);
+    assert_eq!(agents.len(), 0);
 }
 
 // ---------------------------------------------------------------------------
