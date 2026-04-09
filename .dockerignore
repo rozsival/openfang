@@ -10,7 +10,7 @@ scripts
 *.md
 !crates/**/*.md
 LICENSE-*
-CLAUDE.md
+AGENTS.md
 BUILD_LOG.md
 .env
 .env.*
