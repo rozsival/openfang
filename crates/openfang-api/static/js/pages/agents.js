@@ -95,7 +95,7 @@ function agentsPage() {
     searchQuery: '',
 
     builtinTemplates: [],
-    
+
     // Load templates from API
     async init() {
       await this.loadTemplates();
@@ -320,8 +320,8 @@ function agentsPage() {
       this.selectedPreset = '';
       this.soulContent = '';
       this.spawnForm.name = '';
-      this.spawnForm.provider = 'groq';
-      this.spawnForm.model = 'llama-3.3-70b-versatile';
+      this.spawnForm.provider = 'default';
+      this.spawnForm.model = 'default';
       this.spawnForm.systemPrompt = 'You are a helpful assistant.';
       this.spawnForm.profile = 'full';
       // Fetch status defaults and dynamic provider list concurrently
